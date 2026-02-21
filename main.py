@@ -1,5 +1,5 @@
 def main():
-    import face_detection
+    import view_files
 
 
 if __name__ == "__main__":
