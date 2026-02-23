@@ -5,6 +5,13 @@ import os
 from PIL import Image
 from datetime import datetime, timedelta
 
+from repository.photo_repository import PhotoRepository
+from service.drive_service import DriveService
+from service.face_service import FaceService
+from utils.embedding_util import EmbeddingGenerator
+from utils.face_detection_util import FaceDetector
+from utils.http_client import HttpClient
+
 
 def _crop_all_faces(cv_img, faces):
     """Return a list of PIL RGB images, one per detected face."""
@@ -34,12 +41,12 @@ class PhotoService:
 
     def __init__(
         self,
-        drive_service,
-        repo,
-        face_detector,
-        embedding_generator,
-        http_client,
-        face_service,
+        drive_service: "DriveService",
+        repo: "PhotoRepository",
+        face_detector: "FaceDetector",
+        embedding_generator: "EmbeddingGenerator",
+        http_client: "HttpClient",
+        face_service: "FaceService",
     ):
         self.drive_service = drive_service
         self.repo = repo

@@ -11,7 +11,7 @@ class DriveService:
             self.drive.files()
             .list(
                 q=query,
-                fields="files(id,name,webViewLink,createdTime)",
+                fields="files(id,name,webViewLink,createdTime,parents)",
             )
             .execute()
         )
@@ -28,9 +28,34 @@ class DriveService:
                 self.drive.files()
                 .get(
                     fileId=file_id,
-                    fields="id,name,webViewLink,mimeType",
+                    fields="id,name,webViewLink,mimeType,parents",
                 )
                 .execute()
             )
         except Exception:
             return None
+        
+    def get_folder_metadata(self, folder_id: str) -> dict | None:
+        try:
+            return (
+                self.drive.files()
+                .get(
+                    fileId=folder_id,
+                    fields="id,name,parents",
+                )
+                .execute()
+            )
+        except Exception:
+            return None
+
+    def get_all_folders(self) -> list:
+        """Fetch all folders the service account can see."""
+        results = (
+            self.drive.files()
+            .list(
+                q="mimeType = 'application/vnd.google-apps.folder'",
+                fields="files(id,name,parents)",
+            )
+            .execute()
+        )
+        return results.get("files", [])

@@ -2,12 +2,14 @@ from fastapi import APIRouter, HTTPException
 
 from pydantic import BaseModel
 
+from service.photo_service import PhotoService
+
 
 class IndexRequest(BaseModel):
     file_id: str
 
 
-def router(photo_service) -> APIRouter:
+def router(photo_service: "PhotoService") -> APIRouter:
     r = APIRouter()
 
     @r.get("/photos")
