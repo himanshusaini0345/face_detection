@@ -294,6 +294,7 @@ dependencies = [
     { name = "apscheduler" },
     { name = "cmake" },
     { name = "dlib-bin" },
+    { name = "face-recognition-models" },
     { name = "fastapi" },
     { name = "google-api-python-client" },
     { name = "google-auth-httplib2" },
@@ -318,6 +319,7 @@ requires-dist = [
     { name = "apscheduler", specifier = ">=3.11.2" },
     { name = "cmake", specifier = ">=3.25.0" },
     { name = "dlib-bin", specifier = ">=20.0.0" },
+    { name = "face-recognition-models", specifier = ">=0.3.0" },
     { name = "fastapi", specifier = ">=0.131.0" },
     { name = "google-api-python-client", specifier = ">=2.190.0" },
     { name = "google-auth-httplib2", specifier = ">=0.3.0" },
@@ -334,6 +336,12 @@ requires-dist = [
     { name = "torchvision", specifier = ">=0.25.0" },
     { name = "uvicorn", specifier = ">=0.41.0" },
 ]
+
+[[package]]
+name = "face-recognition-models"
+version = "0.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/3b/4fd8c534f6c0d1b80ce0973d01331525538045084c73c153ee6df20224cf/face_recognition_models-0.3.0.tar.gz", hash = "sha256:b79bd200a88c87c9a9d446c990ae71c5a626d1f3730174e6d570157ff1d896cf", size = 100149358, upload-time = "2017-09-28T22:53:52.516Z" }
 
 [[package]]
 name = "fastapi"

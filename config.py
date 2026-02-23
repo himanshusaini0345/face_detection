@@ -9,7 +9,7 @@ class Config:
     MSSQL_DB: str = os.getenv("MSSQL_DB", "EMS_WEB_2023")
     MSSQL_USER: str = os.getenv("MSSQL_USER", "erpems")
     MSSQL_PASSWORD: str = os.getenv("MSSQL_PASSWORD", "erpems#@!123")
-    
+        
     EMS_BASE_URL: str = os.getenv("EMS_BASE_URL", "https://ems.subharti.org")
     SERVICE_ACCOUNT_FILE: str = os.getenv(
         "SERVICE_ACCOUNT_FILE", "drive-image-access-488104-dfeb01003fac.json"

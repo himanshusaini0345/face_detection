@@ -8,6 +8,7 @@ dependencies = [
     "apscheduler>=3.11.2",
     "cmake>=3.25.0",
     "dlib-bin>=20.0.0",
+    "face-recognition-models>=0.3.0",
     "fastapi>=0.131.0",
     "google-api-python-client>=2.190.0",
     "google-auth-httplib2>=0.3.0",
