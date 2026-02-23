@@ -34,7 +34,7 @@ class DriveService:
             )
         except Exception:
             return None
-        
+
     def get_folder_metadata(self, folder_id: str) -> dict | None:
         try:
             return (
@@ -49,13 +49,20 @@ class DriveService:
             return None
 
     def get_all_folders(self) -> list:
-        """Fetch all folders the service account can see."""
-        results = (
-            self.drive.files()
-            .list(
+        """Fetch all folders the service account can see, with pagination."""
+        folders = []
+        page_token = None
+        while True:
+            params = dict(
                 q="mimeType = 'application/vnd.google-apps.folder'",
-                fields="files(id,name,parents)",
+                fields="nextPageToken, files(id,name,parents)",
+                pageSize=1000,
             )
-            .execute()
-        )
-        return results.get("files", [])
+            if page_token:
+                params["pageToken"] = page_token
+            result = self.drive.files().list(**params).execute()
+            folders.extend(result.get("files", []))
+            page_token = result.get("nextPageToken")
+            if not page_token:
+                break
+        return folders
