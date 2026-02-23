@@ -6,7 +6,7 @@ import psycopg2
 import os
 import urllib.request
 
-SOLO_IMAGE = "0E2A0095.jpg"
+SOLO_IMAGE = "JatinKumar_SU202100393.jpg"
 STORED_DIR = "stored-faces"
 DB_URI = "postgresql://postgres:postgres@127.0.0.1:5432/facedb"
 
@@ -14,7 +14,7 @@ DB_URI = "postgresql://postgres:postgres@127.0.0.1:5432/facedb"
 # If best match is X and second best is Y,
 # accept the match only if it's less than GAP_RATIO of the way to the second best.
 # 0.7 means: best must be at least 30% closer than second best.
-GAP_RATIO = 0.8
+GAP_RATIO = 1.0
 
 PROTOTXT = "deploy.prototxt"
 CAFFEMODEL = "res10_300x300_ssd_iter_140000.caffemodel"

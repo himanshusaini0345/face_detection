@@ -6,7 +6,7 @@ import psycopg2
 import os
 import urllib.request
 
-GROUP_IMAGE = "test-image.jpeg"
+GROUP_IMAGE = "0E2A0063.jpg"
 STORED_DIR = "stored-faces"
 DB_URI = "postgresql://postgres:postgres@127.0.0.1:5432/facedb"
 
