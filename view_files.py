@@ -15,6 +15,10 @@ delegated_credentials = service_account.Credentials.from_service_account_file(
 service = build("drive", "v3", credentials=delegated_credentials)
 
 # Now you can list files for that specific user
-results = service.files().list(pageSize=10).execute()
+results = (
+    service.files()
+    .list(pageSize=10, fields="files(id,name,mimeType,parents,createdTime,webViewLink)")
+    .execute()
+)
 files = results.get("files", [])
 print(json.dumps(files, indent=4))

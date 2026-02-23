@@ -5,30 +5,24 @@ import cv2
 alg = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
 # passing the algorithm to OpenCV
 haar_cascade = cv2.CascadeClassifier(alg)
-# loading the image path into file_name variable - replace <INSERT YOUR IMAGE NAME HERE> with the path to your image
-file_name = "test-image.jpeg"
+# loading the image path into file_name variable
+file_name = "0E2A0063.jpg"
 # reading the image
 img = cv2.imread(file_name, 0)
-# creating a black and white version of the image
-# gray_img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 gray_img = img
 # detecting the faces
 faces = haar_cascade.detectMultiScale(
-    gray_img, scaleFactor=1.05, minNeighbors=2, minSize=(100, 100)
+    gray_img, scaleFactor=1.05, minNeighbors=6, minSize=(100, 100)
 )
 
 i = 0
-# for each face detected
 for x, y, w, h in faces:
-    # crop the image to select only the face
     cropped_image = img[y : y + h, x : x + w]
-    # loading the target image path into target_file_name variable  - replace <INSERT YOUR TARGET IMAGE NAME HERE> with the path to your target image
     target_file_name = "stored-faces/" + str(i) + ".jpg"
-    cv2.imwrite(
-        target_file_name,
-        cropped_image,
-    )
+    cv2.imwrite(target_file_name, cropped_image)
     i = i + 1
+
+print(f"indexed {i} faces from group photo")
 
 # importing the required libraries
 import numpy as np
@@ -37,45 +31,70 @@ from PIL import Image
 import psycopg2
 import os
 
-# connecting to the database - replace the SERVICE URI with the service URI
 conn = psycopg2.connect("postgresql://postgres:postgres@127.0.0.1:5432/facedb")
 
 for filename in os.listdir("stored-faces"):
-    # opening the image
     img = Image.open("stored-faces/" + filename)
-    # loading the `imgbeddings`
     ibed = imgbeddings()
-    # calculating the embeddings
     embedding = ibed.to_embeddings(img)
     cur = conn.cursor()
     cur.execute(
-        "INSERT INTO pictures values (%s,%s)", (filename, embedding[0].tolist())
+        "INSERT INTO pictures (file_id, webviewlink, embedding) VALUES (%s, %s, %s)",
+        (filename, "", embedding[0].tolist()),
     )
-    print(filename)
+    print(f"inserted: {filename}")
 conn.commit()
 
-# loading the face image path into file_name variable
-file_name = (
-    "solo-image.jpeg"  # replace <INSERT YOUR FACE FILE NAME> with the path to your image
-)
-# opening the image
-img = Image.open(file_name)
-# loading the `imgbeddings`
-ibed = imgbeddings()
-# calculating the embeddings
-embedding = ibed.to_embeddings(img)
+# ── query — MUST crop face from solo image first ─────────────
+file_name = "0E2A0095.jpg"
 
-from IPython.display import Image, display
+# Step 1 — detect face in the solo image (same pipeline as indexing)
+solo_cv = cv2.imread(file_name, 0)
+solo_faces = haar_cascade.detectMultiScale(
+    solo_cv, scaleFactor=1.05, minNeighbors=6, minSize=(80, 80)
+)
+
+if len(solo_faces) == 0:
+    print("No face detected in solo image — trying with full image instead")
+    query_img = Image.open(file_name)
+else:
+    # crop the first (and likely only) face
+    x, y, w, h = solo_faces[0]
+    cropped_solo = solo_cv[y : y + h, x : x + w]
+    query_img = Image.fromarray(cropped_solo)
+    query_img.show(title="query_face")  # DEBUG — confirm correct crop
+    print(f"detected face in solo image: {w}x{h}px")
+
+# Step 2 — embed the cropped face
+ibed = imgbeddings()
+embedding = ibed.to_embeddings(query_img)
+
+# Step 3 — query with threshold
+# Start at 1.0 (loose) to confirm matches exist, tighten once working
+THRESHOLD = 1.0
 
 cur = conn.cursor()
 string_representation = "[" + ",".join(str(x) for x in embedding[0].tolist()) + "]"
 cur.execute(
-    "SELECT * FROM pictures ORDER BY embedding <-> %s LIMIT 1;",
-    (string_representation,),
+    """
+    SELECT file_id, embedding <-> %s AS distance
+    FROM pictures
+    WHERE embedding <-> %s < %s
+    ORDER BY distance
+    LIMIT 1
+    """,
+    (string_representation, string_representation, THRESHOLD),
 )
 rows = cur.fetchall()
-for row in rows:
-    from PIL import Image as PILImage
-    result = PILImage.open("stored-faces/" + row[0])
-    result.show()
+
+if not rows:
+    print(f"No match found within threshold {THRESHOLD} — try increasing it")
+else:
+    for file_id, distance in rows:
+        print(f"match: {file_id}  distance: {distance:.4f}")
+        from PIL import Image as PILImage
+
+        result = PILImage.open("stored-faces/" + file_id)
+        result.show()
+
 cur.close()
