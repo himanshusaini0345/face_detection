@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    container_name: face-detection-dev
+    # 1. This connects your Windows folder to the Linux container folder
+    volumes:
+      - .:/app
+      - deepface_models:/root/.deepface/weights
+    # 2. Keeps the container running so you can "enter" it
+    # This keeps the container alive
+    command: tail -f /dev/null
+    tty: true
+    stdin_open: true
+    environment:
+      - PYTHONUNBUFFERED=1
+
+volumes:
+  # This saves the AI models on your disk so they don't redownload every time
+  deepface_models:
