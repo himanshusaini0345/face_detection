@@ -65,7 +65,7 @@ class DriveIndexJob:
                 images.extend(result.get("files", []))
                 page_token = result.get("nextPageToken")
                 print(f"[index] fetched {len(images)} files so far...")
-                if not page_token or len(images) >= 10000:  # safety
+                if not page_token: # or len(images) >= 10000:  # safety
                     break
             print(f"[index] total: {len(images)} image files")
 
