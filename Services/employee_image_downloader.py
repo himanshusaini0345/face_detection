@@ -23,11 +23,13 @@ class EmployeeImageDownloader:
     def _connect(self):
         try:
             conn_str = (
-                "DRIVER={ODBC Driver 17 for SQL Server};"
+                "DRIVER={ODBC Driver 18 for SQL Server};"
                 f"SERVER={self.server},{self.port};"
                 f"DATABASE={self.database};"
                 f"UID={self.username};"
-                f"PWD={self.password}"
+                f"PWD={self.password};"
+                "Encrypt=no;"
+                "TrustServerCertificate=yes;"
             )
             return pyodbc.connect(conn_str)
         except Exception as e:
@@ -40,7 +42,7 @@ class EmployeeImageDownloader:
 
         try:
             cursor = self.connection.cursor()
-            cursor.execute("SELECT Id, FacePhoto FROM emp.Employees")
+            cursor.execute("SELECT TOP 100 Id, FacePhoto FROM emp.Employees WHERE Id in(7938,2983,3135,1008)")
 
             rows = cursor.fetchall()
 

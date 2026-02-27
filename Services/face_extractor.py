@@ -32,7 +32,7 @@ class FaceExtractor:
             print("Download error:", str(e))
             return None
 
-    def extract_from_photo(self, photo: Photo):
+    def extract_from_photo(self, photo: Photo) -> list[ExtractedFace]:
         if not self.drive_service:
             return []
 

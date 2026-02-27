@@ -6,6 +6,16 @@ services:
     volumes:
       - .:/app
       - deepface_models:/root/.deepface/weights
+      - ./user_images:/app/user_images     # <--- Changed to Bind Mount
+      - ./extracted_faces:/app/extracted_faces # <--- Changed to Bind Mount
+      - ./temp:/app/temp                   # <--- Add this for your temp results
+    
+    env_file:
+      - .env
+    
+    # For local LAN DB access (important)
+    network_mode: bridge
+
     # 2. Keeps the container running so you can "enter" it
     # This keeps the container alive
     command: tail -f /dev/null
@@ -17,3 +27,5 @@ services:
 volumes:
   # This saves the AI models on your disk so they don't redownload every time
   deepface_models:
+  user_images:
+  extracted_faces:
