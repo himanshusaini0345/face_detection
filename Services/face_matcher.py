@@ -17,13 +17,16 @@ class FaceMatcher:
         self.distance_metric = distance_metric
         self.threshold = threshold
 
-    def match(self, extracted_photo_path: str) -> str:
+    def match(self, extracted_photo_path: str) -> list:
         """
         Returns:
-            - Path of matched image from user_images
-            - "" (empty string) if no match
+            [
+                {
+                    "identity": "user_images/102.jpg",
+                    "distance": 0.27
+                }
+            ]
         """
-
         try:
             results = DeepFace.find(
                 img_path=extracted_photo_path,
@@ -37,10 +40,15 @@ class FaceMatcher:
 
             # DeepFace returns list of DataFrames (even for single image)
             if not results or results[0].empty:
-                return ""
+                return []
+            df = results[0]
+            matches = []
+            for _, row in df.iterrows():
+                matches.append(
+                    {"identity": row["identity"], "distance": float(row["distance"])}
+                )
 
-            best_match = results[0].iloc[0]
-            return best_match["identity"]
+            return matches
 
         except Exception:
-            return ""
+            return []

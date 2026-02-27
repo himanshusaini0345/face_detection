@@ -22,61 +22,31 @@ class GoogleDriveImageFetcher:
         except Exception:
             return None
 
-    def get_images_from_folder(self, folder_id: str):
-        """
-        Returns:
-            [
-                {
-                    "photo_id": "...",
-                    "photo_link": "...",
-                    "folder_name": "..."
-                }
-            ]
-        If any error occurs, returns []
-        """
+    def get_images_from_folder(self, folder_id: str, limit=None):
 
-        if not self.service:
-            return []
+        files = []
+        page_token = None
 
-        try:
-            # 1️⃣ Get folder metadata (to extract folder name)
-            folder = (
-                self.service.files()
-                .get(fileId=folder_id, fields="id,name,mimeType")
-                .execute()
-            )
-
-            # Validate it's actually a folder
-            if folder.get("mimeType") != "application/vnd.google-apps.folder":
-                return []
-
-            folder_name = folder.get("name")
-
-            # 2️⃣ Fetch image files inside folder
-            results = (
+        while True:
+            response = (
                 self.service.files()
                 .list(
                     q=f"'{folder_id}' in parents and mimeType contains 'image/' and trashed = false",
-                    fields="files(id,name,webViewLink)",
+                    fields="nextPageToken, files(id,name,webViewLink)",
                     pageSize=1000,
+                    pageToken=page_token,
                 )
                 .execute()
             )
 
-            files = results.get("files", [])
+            batch = response.get("files", [])
+            files.extend(batch)
 
-            output = []
-            for file in files:
-                output.append(
-                    {
-                        "photo_id": file.get("id"),
-                        "photo_link": file.get("webViewLink"),
-                        "folder_name": folder_name,
-                    }
-                )
+            if limit and len(files) >= limit:
+                return files[:limit]
 
-            return output
+            page_token = response.get("nextPageToken")
+            if not page_token:
+                break
 
-        except (HttpError, google.auth.exceptions.GoogleAuthError, Exception):
-            # Network issue, permission issue, invalid folder, etc.
-            return []
+        return files

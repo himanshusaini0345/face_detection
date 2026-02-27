@@ -1,4 +1,5 @@
 import os
+from Repositories.db import get_connection
 import pyodbc
 import requests
 from dotenv import load_dotenv
@@ -8,30 +9,14 @@ class EmployeeImageDownloader:
     def __init__(self):
         load_dotenv()
 
-        self.server = os.getenv("DB_SERVER")
-        self.database = os.getenv("DB_NAME")
-        self.username = os.getenv("DB_USERNAME")
-        self.password = os.getenv("DB_PASSWORD")
-        self.port = os.getenv("DB_PORT", "1433")
         self.base_url = os.getenv("BASE_IMAGE_URL")
-
         self.output_dir = "user_images"
         os.makedirs(self.output_dir, exist_ok=True)
-
         self.connection = self._connect()
 
     def _connect(self):
         try:
-            conn_str = (
-                "DRIVER={ODBC Driver 18 for SQL Server};"
-                f"SERVER={self.server},{self.port};"
-                f"DATABASE={self.database};"
-                f"UID={self.username};"
-                f"PWD={self.password};"
-                "Encrypt=no;"
-                "TrustServerCertificate=yes;"
-            )
-            return pyodbc.connect(conn_str)
+            return get_connection()
         except Exception as e:
             print("DB Connection Error:", e)
             return None
@@ -42,7 +27,7 @@ class EmployeeImageDownloader:
 
         try:
             cursor = self.connection.cursor()
-            cursor.execute("SELECT TOP 100 Id, FacePhoto FROM emp.Employees WHERE Id in(7938,2983,3135,1008)")
+            cursor.execute("SELECT Id, FacePhoto FROM emp.Employees")
 
             rows = cursor.fetchall()
 
