@@ -22,31 +22,98 @@ class GoogleDriveImageFetcher:
         except Exception:
             return None
 
-    def get_images_from_folder(self, folder_id: str, limit=None):
+    def get_images_from_folder(self, folder_id: str, limit: int = 1000):
+        """
+        Returns:
+            [
+                {
+                    "photo_id": "...",
+                    "photo_link": "...",
+                    "folder_name": "..."
+                }
+            ]
+        If any error occurs, returns []
+        """
 
-        files = []
-        page_token = None
+        if not self.service:
+            return []
 
-        while True:
-            response = (
+        try:
+            # 1️⃣ Get folder metadata (to extract folder name)
+            folder = (
+                self.service.files()
+                .get(fileId=folder_id, fields="id,name,mimeType")
+                .execute()
+            )
+
+            # Validate it's actually a folder
+            if folder.get("mimeType") != "application/vnd.google-apps.folder":
+                return []
+
+            folder_name = folder.get("name")
+
+            # 2️⃣ Fetch image files inside folder
+            results = (
                 self.service.files()
                 .list(
                     q=f"'{folder_id}' in parents and mimeType contains 'image/' and trashed = false",
-                    fields="nextPageToken, files(id,name,webViewLink)",
-                    pageSize=1000,
-                    pageToken=page_token,
+                    fields="files(id,name,webViewLink)",
+                    pageSize=limit,
                 )
                 .execute()
             )
 
-            batch = response.get("files", [])
-            files.extend(batch)
+            files = results.get("files", [])
 
-            if limit and len(files) >= limit:
-                return files[:limit]
+            output = []
+            for file in files:
+                output.append(
+                    {
+                        "photo_id": file.get("id"),
+                        "photo_link": file.get("webViewLink"),
+                        "folder_name": folder_name,
+                    }
+                )
 
-            page_token = response.get("nextPageToken")
-            if not page_token:
-                break
+            return output
 
-        return files
+        except (HttpError, google.auth.exceptions.GoogleAuthError, Exception):
+            # Network issue, permission issue, invalid folder, etc.
+            return []
+
+    def count_images_in_folder(self, folder_id: str) -> int:
+        """
+            Returns number of image files inside a folder.
+            Returns 0 if folder invalid or error occurs.
+        """
+
+        if not self.service:
+            return 0
+
+        try:
+            # Validate folder
+            folder = (
+                self.service.files()
+                .get(fileId=folder_id, fields="id,mimeType")
+                .execute()
+            )
+
+            if folder.get("mimeType") != "application/vnd.google-apps.folder":
+                return 0
+
+            # Count only image files
+            results = (
+                self.service.files()
+                .list(
+                    q=f"'{folder_id}' in parents and mimeType contains 'image/' and trashed = false",
+                    fields="files(id)",
+                    pageSize=1000,
+                )
+                .execute()
+            )
+
+            files = results.get("files", [])
+            return len(files)
+
+        except Exception:
+            return 0

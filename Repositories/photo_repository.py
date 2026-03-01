@@ -30,3 +30,22 @@ class PhotoRepository:
             photo_id,
         )
         self.conn.commit()
+
+    def is_processed(self, photo_id):
+        cursor = self.conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT processed 
+            FROM images.photos 
+            WHERE id = ?
+            """,
+            photo_id,
+        )
+
+        row = cursor.fetchone()
+
+        if row is None:
+            return False   # photo not found (safe fallback)
+
+        return bool(row[0])

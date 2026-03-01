@@ -39,7 +39,7 @@ class FaceExtractor:
         try:
             image = self._download_photo(photo.photo_id)
             if image is None:
-                return []
+                return None
 
             photo_folder = os.path.join(self.output_base, photo.photo_id)
             os.makedirs(photo_folder, exist_ok=True)
@@ -75,4 +75,4 @@ class FaceExtractor:
 
         except Exception as e:
             print("Face extraction error:", str(e))
-            return []
+            return None

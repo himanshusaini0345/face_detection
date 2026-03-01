@@ -11,10 +11,10 @@ from Repositories.user_extracted_face_repository import UserExtractedFaceReposit
 from Repositories.db import get_connection
 
 
-FOLDER_ID = "1l8LTsN1zag-iKhTCH7SAckZRTyuT8o9R"
+FOLDER_ID = "1C7x4a0-4d84Z6gWxuMQeCHs8VajVxZzE"
 
 
-def process_folder(folder_id: str):
+def process_folder(fetcher:GoogleDriveImageFetcher,folder_id: str):
     print(f"\n🚀 Processing folder: {folder_id}")
 
     # DB connection
@@ -24,11 +24,7 @@ def process_folder(folder_id: str):
     face_repo = ExtractedFaceRepository(conn)
     match_repo = UserExtractedFaceRepository(conn)
 
-    # 1️⃣ Fetch photos
-    fetcher = GoogleDriveImageFetcher(
-        service_account_file="drive-image-access-488104-dfeb01003fac.json",
-        delegated_user="ai@subharti.org",
-    )
+    # 1️⃣ Fetch photos   
 
     photos_raw = fetcher.get_images_from_folder(folder_id)
 
@@ -53,14 +49,18 @@ def process_folder(folder_id: str):
 
         print(f"\n📝 Processing photo: {photo.photo_id}")
 
+        if photo_repo.is_processed(photo.photo_id):
+            print("   → Already processed. Skipping.")
+            continue
+
         # Insert photo record (acts like tracking)
         photo_repo.insert_photo(photo)
 
-        # Skip if already processed (optional future improvement)
-        # if photo_repo.is_processed(photo.photo_id):
-        #     continue
-
         faces = extractor.extract_from_photo(photo)
+        if faces is None:
+            print("   → Extraction failed. Skipping mark_processed.")
+            continue
+        
         print(f"   → Extracted {len(faces)} faces")
 
         for face in faces:
@@ -87,9 +87,42 @@ def download_employee_images():
     downloader = EmployeeImageDownloader()
     downloader.download_all_images()
 
+
+def get_images_all():
+    conn = get_connection()
+    match_repo = UserExtractedFaceRepository(conn)
+
+    user_id = "EMP001"
+
+    print(f"\n📊 Matches for User: {user_id}\n")
+
+    results = match_repo.get_all()
+
+    for row in results:
+        employee_id, face_path, photo_link, distance, matched_at = row
+
+        employee_image_path = os.path.join("user_images", f"{employee_id}.jpg")
+
+        print(
+            f"Employee: {employee_id} | "
+            f"Employee Image: {employee_image_path} | "
+            f"Matched Face: {face_path} | "
+            f"Photo: {photo_link} | "
+            f"Distance: {distance} | "
+            f"Matched At: {matched_at}"
+        )
+
+    conn.close()
+
+
 def main():
-    download_employee_images()
-    process_folder(FOLDER_ID)
+    fetcher = GoogleDriveImageFetcher(
+        service_account_file="drive-image-access-488104-dfeb01003fac.json",
+        delegated_user="ai@subharti.org",
+    )
+    process_folder(fetcher,FOLDER_ID)
+    # print(fetcher.count_images_in_folder(FOLDER_ID))
+    # get_images_all()
 
 if __name__ == "__main__":
     main()
