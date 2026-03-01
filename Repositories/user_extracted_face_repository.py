@@ -32,9 +32,7 @@ class UserExtractedFaceRepository:
             SELECT 
                 uef.employee_id,
                 ef.local_path,
-                p.webview_link,
-                uef.distance,
-                uef.matched_at
+                p.webview_link
             FROM images.user_extracted_faces uef
             JOIN images.extracted_faces ef
                 ON uef.extracted_face_id = ef.id
@@ -46,7 +44,14 @@ class UserExtractedFaceRepository:
             user_id,
         )
 
-        return cursor.fetchall()
+        columns = [column[0] for column in cursor.description]
+        rows = cursor.fetchall()
+
+        result = []
+        for row in rows:
+            result.append(dict(zip(columns, row)))
+
+        return result
 
     def get_all(self):
         cursor = self.conn.cursor()

@@ -1,11 +1,13 @@
-deepface
-tf-keras
-opencv-python-headless
+deepface==0.0.98    
+tf-keras==2.20.1
+opencv-python-headless==4.13.0.92
 
-google-api-python-client
-google-auth-httplib2
-google-auth-oauthlib
+google-api-python-client==2.190.0
+google-auth-httplib2==0.3.0
+google-auth-oauthlib==1.2.4
 
-pyodbc
-python-dotenv
-requests
+pyodbc==5.3.0
+python-dotenv==1.2.1
+requests==2.32.5
+fastapi==0.134.0
+uvicorn==0.41.0

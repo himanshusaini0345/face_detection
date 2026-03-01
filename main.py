@@ -116,13 +116,17 @@ def get_images_all():
 
 
 def main():
-    fetcher = GoogleDriveImageFetcher(
-        service_account_file="drive-image-access-488104-dfeb01003fac.json",
-        delegated_user="ai@subharti.org",
-    )
-    process_folder(fetcher,FOLDER_ID)
+    # fetcher = GoogleDriveImageFetcher(
+    #     service_account_file="drive-image-access-488104-dfeb01003fac.json",
+    #     delegated_user="ai@subharti.org",
+    # )
+    # process_folder(fetcher,FOLDER_ID)
     # print(fetcher.count_images_in_folder(FOLDER_ID))
     # get_images_all()
+    conn = get_connection()
+    matched_repo = UserExtractedFaceRepository(conn)
+    result = matched_repo.get_by_user_id(1008)
+    print(result)
 
 if __name__ == "__main__":
     main()

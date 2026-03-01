@@ -1,31 +1,32 @@
 services:
   app:
     build: .
+    
     container_name: face-detection-dev
-    # 1. This connects your Windows folder to the Linux container folder
+
+    ports:
+      - "8000:8000"
+    
     volumes:
       - .:/app
       - deepface_models:/root/.deepface/weights
-      - ./user_images:/app/user_images     # <--- Changed to Bind Mount
-      - ./extracted_faces:/app/extracted_faces # <--- Changed to Bind Mount
-      - ./temp:/app/temp                   # <--- Add this for your temp results
+      - ./user_images:/app/user_images     
+      - ./extracted_faces:/app/extracted_faces 
+      - ./temp:/app/temp                   
     
     env_file:
       - .env
     
-    # For local LAN DB access (important)
     network_mode: bridge
 
-    # 2. Keeps the container running so you can "enter" it
-    # This keeps the container alive
-    command: tail -f /dev/null
+    command: uvicorn server:app --host 0.0.0.0 --port 8000
     tty: true
     stdin_open: true
     environment:
       - PYTHONUNBUFFERED=1
 
 volumes:
-  # This saves the AI models on your disk so they don't redownload every time
   deepface_models:
+  # currently not in use (binding mounts)
   user_images:
   extracted_faces:
