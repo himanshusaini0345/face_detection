@@ -6,3 +6,5 @@ user_images
 __pycache__
 .env
 deepface_backup
+__pycache__/
+*.pyc
