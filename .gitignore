@@ -5,3 +5,4 @@ user_images_to_remove
 user_images
 __pycache__
 .env
+deepface_backup
