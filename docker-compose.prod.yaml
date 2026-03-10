@@ -1,0 +1,12 @@
+services:
+  app:
+    ports:
+      - "8004:8000"
+
+    volumes:
+      - ./deepface_backup:/root/.deepface/weights
+      - ./user_images:/app/user_images
+      - ./extracted_faces:/app/extracted_faces
+      - ./temp:/app/temp
+
+    restart: always
