@@ -3,7 +3,9 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import google.auth.exceptions
+import logging
 
+logger = logging.getLogger(__name__)
 
 class GoogleDriveImageFetcher:
     def __init__(self, service_account_file: str, delegated_user: str):
@@ -145,3 +147,57 @@ class GoogleDriveImageFetcher:
 
         except Exception:
             return None
+
+    def get_leaf_folders_with_images(self) -> list[str]:
+        """
+        Returns folder IDs that directly contain images (leaf folders).
+        """
+
+        if not self.service:
+            logger.error("Google Drive service not initialized")
+            return []
+
+        try:
+            folder_ids = set()
+            page_token = None
+            total_images = 0
+
+            while True:
+                logger.info("Fetching image batch from Drive...")
+
+                response = (
+                    self.service.files()
+                    .list(
+                        q="mimeType contains 'image/' and trashed=false",
+                        fields="nextPageToken, files(id, parents)",
+                        pageSize=1000,
+                        pageToken=page_token,
+                    )
+                    .execute()
+                )
+
+                files = response.get("files", [])
+                logger.info(f"Fetched {len(files)} images in this batch")
+
+                for f in files:
+                    total_images += 1
+                    parents = f.get("parents", [])
+
+                    if parents:
+                        folder_ids.update(parents)
+
+                logger.info(f"Unique folders discovered so far: {len(folder_ids)}")
+
+                page_token = response.get("nextPageToken")
+
+                if not page_token:
+                    break
+
+            logger.info(f"Total images processed: {total_images}")
+            logger.info(f"Total leaf folders containing images: {len(folder_ids)}")
+
+            return list(folder_ids)
+
+        except Exception as e:
+            logger.exception(f"Error while fetching image folders: {e}")
+            return []

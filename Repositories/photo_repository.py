@@ -8,35 +8,28 @@ class PhotoRepository:
 
     def insert_photo(self, photo: Photo):
         cursor = self.conn.cursor()
+
         cursor.execute(
             """
             IF NOT EXISTS (SELECT 1 FROM images.photos WHERE id=?)
-            INSERT INTO images.photos (id, folder_id, webview_link, processed)
-            VALUES (?, ?, ?, 0)
+            INSERT INTO images.photos (id, folder_id, webview_link)
+            VALUES (?, ?, ?)
         """,
+            photo.id,
             photo.id,
             photo.folder_id,
             photo.webview_link,
         )
+
         self.conn.commit()
 
-    def mark_processed(self, photo_id):
-        cursor = self.conn.cursor()
-        cursor.execute(
-            """
-            UPDATE images.photos SET processed=1 WHERE id=?
-        """,
-            photo_id,
-        )
-        self.conn.commit()
-
-    def is_processed(self, photo_id):
+    def is_detection_done(self, photo_id):
         cursor = self.conn.cursor()
 
         cursor.execute(
             """
-            SELECT processed 
-            FROM images.photos 
+            SELECT face_detected
+            FROM images.photos
             WHERE id = ?
             """,
             photo_id,
@@ -44,7 +37,50 @@ class PhotoRepository:
 
         row = cursor.fetchone()
 
-        if row is None:
-            return False   # photo not found (safe fallback)
+        return row and bool(row[0])
+    
+    def is_recognition_done(self, photo_id):
+        cursor = self.conn.cursor()
 
-        return bool(row[0])
+        cursor.execute(
+            """
+            SELECT face_recognized
+            FROM images.photos
+            WHERE id = ?
+            """,
+            photo_id,
+        )
+
+        row = cursor.fetchone()
+
+        return row and bool(row[0])
+    
+    def mark_detection_done(self, photo_id):
+        cursor = self.conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE images.photos
+            SET face_detected = 1,
+                last_face_detected = GETDATE()
+            WHERE id = ?
+            """,
+            photo_id,
+        )
+
+        self.conn.commit()
+
+    def mark_recognition_done(self, photo_id):
+        cursor = self.conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE images.photos
+            SET face_recognized = 1,
+                last_face_recognized = GETDATE()
+            WHERE id = ?
+            """,
+            photo_id,
+        )
+
+        self.conn.commit()
