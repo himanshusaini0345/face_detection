@@ -1,3 +1,4 @@
+from Models.photo import Photo
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
@@ -22,17 +23,9 @@ class GoogleDriveImageFetcher:
         except Exception:
             return None
 
-    def get_images_from_folder(self, folder_id: str, limit: int = 1000):
+    def get_images_from_folder(self, folder_id: str, limit: int = 1000) -> list[Photo]:
         """
-        Returns:
-            [
-                {
-                    "photo_id": "...",
-                    "photo_link": "...",
-                    "folder_name": "..."
-                }
-            ]
-        If any error occurs, returns []
+            Gets Images from google drive for a given folder.
         """
 
         if not self.service:
@@ -50,14 +43,12 @@ class GoogleDriveImageFetcher:
             if folder.get("mimeType") != "application/vnd.google-apps.folder":
                 return []
 
-            folder_name = folder.get("name")
-
             # 2️⃣ Fetch image files inside folder
             results = (
                 self.service.files()
                 .list(
                     q=f"'{folder_id}' in parents and mimeType contains 'image/' and trashed = false",
-                    fields="files(id,name,webViewLink)",
+                    fields="files(id,webViewLink)",
                     pageSize=limit,
                 )
                 .execute()
@@ -65,17 +56,17 @@ class GoogleDriveImageFetcher:
 
             files = results.get("files", [])
 
-            output = []
+            photos: list[Photo] = []
             for file in files:
-                output.append(
-                    {
-                        "photo_id": file.get("id"),
-                        "photo_link": file.get("webViewLink"),
-                        "folder_name": folder_name,
-                    }
+                photos.append(
+                    Photo(
+                        id=file.get("id"),
+                        folder_id=folder_id,
+                        webview_link=file.get("webViewLink"),
+                    )
                 )
 
-            return output
+            return photos
 
         except (HttpError, google.auth.exceptions.GoogleAuthError, Exception):
             # Network issue, permission issue, invalid folder, etc.
@@ -117,3 +108,40 @@ class GoogleDriveImageFetcher:
 
         except Exception:
             return 0
+
+    def get_folder_by_name(
+        self, folder_name: str, parent_folder_id: str = None
+    ) -> list[any] | None:
+        """
+        Returns the folder details for a given folder name.
+        Optionally restrict search to a parent folder.
+        """
+        if not self.service:
+            return None
+
+        try:
+            query = f"name = '{folder_name}' and mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+
+            if parent_folder_id:
+                query += f" and '{parent_folder_id}' in parents"
+
+            results = (
+                self.service.files()
+                .list(
+                    q=query,
+                    spaces="drive",
+                    fields="files(id, name)",
+                    pageSize=1,
+                )
+                .execute()
+            )
+
+            folders = results.get("files", [])
+
+            if not folders:
+                return None
+
+            return folders
+
+        except Exception:
+            return None

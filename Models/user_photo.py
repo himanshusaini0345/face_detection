@@ -2,7 +2,6 @@ from dataclasses import dataclass
 
 
 @dataclass
-class Photo:
-    id: str
-    folder_id: str
+class UserPhoto:
+    employee_id: int
     webview_link: str

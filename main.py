@@ -12,7 +12,9 @@ from Repositories.db import get_connection
 
 
 FOLDER_ID = "1C7x4a0-4d84Z6gWxuMQeCHs8VajVxZzE"
-
+SERVICE_ACCOUNT_FILE = "drive-image-access-488104-dfeb01003fac.json"
+DELEGATED_USER = "ai@subharti.org"
+FACE_EXTRACTOR_OUTPUT_BASE = "extracted_faces"
 
 def process_folder(fetcher:GoogleDriveImageFetcher,folder_id: str):
     print(f"\n🚀 Processing folder: {folder_id}")
@@ -24,32 +26,21 @@ def process_folder(fetcher:GoogleDriveImageFetcher,folder_id: str):
     face_repo = ExtractedFaceRepository(conn)
     match_repo = UserExtractedFaceRepository(conn)
 
-    # 1️⃣ Fetch photos   
-
-    photos_raw = fetcher.get_images_from_folder(folder_id)
-
-    photos = [
-        Photo(
-            photo_id=p["photo_id"],
-            photo_link=p["photo_link"],
-            folder_name=p["folder_name"],
-        )
-        for p in photos_raw
-    ]
-
+    # 1️⃣ Fetch photos
+    photos = fetcher.get_images_from_folder(folder_id)
     print(f"📁 Found {len(photos)} photos")
 
     if not photos:
         return
 
-    extractor = FaceExtractor(fetcher.service)
+    extractor = FaceExtractor(fetcher.service, FACE_EXTRACTOR_OUTPUT_BASE)
     matcher = FaceMatcher()
 
     for photo in photos:
 
-        print(f"\n📝 Processing photo: {photo.photo_id}")
+        print(f"\n📝 Processing photo: {photo.id}")
 
-        if photo_repo.is_processed(photo.photo_id):
+        if photo_repo.is_processed(photo.id):
             print("   → Already processed. Skipping.")
             continue
 
@@ -60,7 +51,7 @@ def process_folder(fetcher:GoogleDriveImageFetcher,folder_id: str):
         if faces is None:
             print("   → Extraction failed. Skipping mark_processed.")
             continue
-        
+
         print(f"   → Extracted {len(faces)} faces")
 
         for face in faces:
@@ -68,7 +59,7 @@ def process_folder(fetcher:GoogleDriveImageFetcher,folder_id: str):
             # Insert extracted face
             face_repo.insert(face)
 
-            matches = matcher.match(face.saved_path)
+            matches = matcher.match(f"{FACE_EXTRACTOR_OUTPUT_BASE}/{face.photo_id}/face_{face.face_id}")
 
             if matches:
                 print(f"   → {face.face_id} matched {len(matches)} candidates")
@@ -79,7 +70,7 @@ def process_folder(fetcher:GoogleDriveImageFetcher,folder_id: str):
                 print(f"   → {face.face_id} no matches")
 
         # Mark photo as processed
-        photo_repo.mark_processed(photo.photo_id)
+        photo_repo.mark_processed(photo.id)
 
     print("\n✅ Folder processing completed\n")
 
@@ -88,45 +79,43 @@ def download_employee_images():
     downloader.download_all_images()
 
 
-def get_images_all():
+def get_user_images(user_id):
     conn = get_connection()
     match_repo = UserExtractedFaceRepository(conn)
 
-    user_id = "EMP001"
-
     print(f"\n📊 Matches for User: {user_id}\n")
 
-    results = match_repo.get_all()
-
-    for row in results:
-        employee_id, face_path, photo_link, distance, matched_at = row
-
-        employee_image_path = os.path.join("user_images", f"{employee_id}.jpg")
-
-        print(
-            f"Employee: {employee_id} | "
-            f"Employee Image: {employee_image_path} | "
-            f"Matched Face: {face_path} | "
-            f"Photo: {photo_link} | "
-            f"Distance: {distance} | "
-            f"Matched At: {matched_at}"
-        )
-
+    photos = match_repo.get_by_user_id(user_id)
     conn.close()
+    return photos
 
 
 def main():
     # fetcher = GoogleDriveImageFetcher(
-    #     service_account_file="drive-image-access-488104-dfeb01003fac.json",
-    #     delegated_user="ai@subharti.org",
+    #     service_account_file=SERVICE_ACCOUNT_FILE,
+    #     delegated_user=DELEGATED_USER,
     # )
-    # process_folder(fetcher,FOLDER_ID)
-    # print(fetcher.count_images_in_folder(FOLDER_ID))
-    # get_images_all()
-    conn = get_connection()
-    matched_repo = UserExtractedFaceRepository(conn)
-    result = matched_repo.get_by_user_id(1008)
-    print(result)
+    photos = get_user_images("2330")
+    for photo in photos:
+        print(photo.webview_link)
+
 
 if __name__ == "__main__":
     main()
+
+    # photos = fetcher.get_images_from_folder(FOLDER_ID, 1)
+    # for photo in photos:
+    #     print(photo)
+
+    # folders = fetcher.get_folder_by_name("DESIGN CASTLE 2025")
+    # for folder in folders:
+    #     print(folder)
+
+    # process_folder(fetcher,FOLDER_ID)
+    # print(fetcher.count_images_in_folder(FOLDER_ID))
+    # get_images_all()
+
+    # conn = get_connection()
+    # matched_repo = UserExtractedFaceRepository(conn)
+    # result = matched_repo.get_by_user_id(1008)
+    # print(result)

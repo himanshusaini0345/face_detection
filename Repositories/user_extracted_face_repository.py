@@ -1,5 +1,7 @@
 import os
 
+from Models.user_photo import UserPhoto
+
 
 class UserExtractedFaceRepository:
 
@@ -25,17 +27,16 @@ class UserExtractedFaceRepository:
 
         self.conn.commit()
 
-    def get_by_user_id(self, user_id):
+    def get_by_user_id(self, user_id) -> list[UserPhoto]:
         cursor = self.conn.cursor()
         cursor.execute(
             """
             SELECT 
-                uef.employee_id,
-                ef.local_path,
-                p.webview_link
+                p.webview_link,
+                uef.employee_id
             FROM images.user_extracted_faces uef
             JOIN images.extracted_faces ef
-                ON uef.extracted_face_id = ef.id
+                ON uef.extracted_face_id = CONCAT(ef.photo_id,'_',ef.face_id)
             JOIN images.photos p
                 ON ef.photo_id = p.id
             WHERE uef.employee_id = ?
@@ -44,32 +45,6 @@ class UserExtractedFaceRepository:
             user_id,
         )
 
-        columns = [column[0] for column in cursor.description]
-        rows = cursor.fetchall()
+        columns = [c[0] for c in cursor.description]
 
-        result = []
-        for row in rows:
-            result.append(dict(zip(columns, row)))
-
-        return result
-
-    def get_all(self):
-        cursor = self.conn.cursor()
-        cursor.execute(
-            """
-            SELECT 
-                uef.employee_id,
-                ef.local_path,
-                p.webview_link,
-                uef.distance,
-                uef.matched_at
-            FROM images.user_extracted_faces uef
-            JOIN images.extracted_faces ef
-                ON uef.extracted_face_id = ef.id
-            JOIN images.photos p
-                ON ef.photo_id = p.id
-            ORDER BY uef.employee_id, uef.matched_at DESC
-        """
-        )
-
-        return cursor.fetchall()
+        return [UserPhoto(**dict(zip(columns, row))) for row in cursor.fetchall()]

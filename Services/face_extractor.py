@@ -37,11 +37,11 @@ class FaceExtractor:
             return []
 
         try:
-            image = self._download_photo(photo.photo_id)
+            image = self._download_photo(photo.id)
             if image is None:
                 return None
 
-            photo_folder = os.path.join(self.output_base, photo.photo_id)
+            photo_folder = os.path.join(self.output_base, photo.id)
             os.makedirs(photo_folder, exist_ok=True)
 
             face_objs = DeepFace.extract_faces(
@@ -64,8 +64,8 @@ class FaceExtractor:
 
                 extracted_faces.append(
                     ExtractedFace(
-                        face_id=f"{photo.photo_id}_{i}",
-                        photo_id=photo.photo_id,
+                        face_id=f"{photo.id}_{i}",
+                        photo_id=photo.id,
                         saved_path=save_path,
                         confidence=float(face_obj.get("confidence", 0.0)),
                     )

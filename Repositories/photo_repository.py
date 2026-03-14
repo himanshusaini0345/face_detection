@@ -11,13 +11,12 @@ class PhotoRepository:
         cursor.execute(
             """
             IF NOT EXISTS (SELECT 1 FROM images.photos WHERE id=?)
-            INSERT INTO images.photos (id, folder_name, webview_link, processed)
+            INSERT INTO images.photos (id, folder_id, webview_link, processed)
             VALUES (?, ?, ?, 0)
         """,
-            photo.photo_id,
-            photo.photo_id,
-            photo.folder_name,
-            photo.photo_link,
+            photo.id,
+            photo.folder_id,
+            photo.webview_link,
         )
         self.conn.commit()
 
