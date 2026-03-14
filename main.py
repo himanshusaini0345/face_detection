@@ -112,6 +112,9 @@ def process_folder(fetcher: GoogleDriveImageFetcher, folder_id: str):
             photo,
         )
 
+        if not faces:
+            faces = face_repo.get_faces_by_photo(photo.id)
+
         recognize_faces_for_photo(
             photo_repo,
             match_repo,
@@ -145,7 +148,8 @@ def main():
         service_account_file=SERVICE_ACCOUNT_FILE,
         delegated_user=DELEGATED_USER,
     )
-    process_folder(fetcher,FOLDER_ID)
+    # print(fetcher.count_images_in_folder("1fW5fbJmUcqx2qeZiw17CExKS9tDtvcg5"))
+    process_folder(fetcher, "1x0XARZAHY5ZI4Y5ZsYYQj4PZaRctfH_H")
     # conn = get_connection()
     # folder_repo = FolderRepository(conn)
 

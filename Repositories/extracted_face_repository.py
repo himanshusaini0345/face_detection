@@ -10,10 +10,40 @@ class ExtractedFaceRepository:
         cursor.execute(
             """
             INSERT INTO images.extracted_faces (face_id, photo_id, confidence)
-            VALUES (?, ?, ?, ?)
-        """,
+            SELECT ?, ?, ?
+            WHERE NOT EXISTS (
+                SELECT 1
+                FROM images.extracted_faces
+                WHERE photo_id = ? AND face_id = ?
+            )
+            """,
             face.face_id,
             face.photo_id,
             face.confidence,
+            face.photo_id,
+            face.face_id,
         )
         self.conn.commit()
+
+    def get_faces_by_photo(self, photo_id: str) -> list[ExtractedFace]:
+        cursor = self.conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT face_id, photo_id, confidence
+            FROM images.extracted_faces
+            WHERE photo_id = ?
+            """,
+            photo_id,
+        )
+
+        rows = cursor.fetchall()
+
+        return [
+            ExtractedFace(
+                face_id=row[0],
+                photo_id=row[1],
+                confidence=row[2],
+            )
+            for row in rows
+        ]

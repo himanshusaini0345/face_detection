@@ -66,7 +66,6 @@ class FaceExtractor:
                     ExtractedFace(
                         face_id=f"{photo.id}_{i}",
                         photo_id=photo.id,
-                        saved_path=save_path,
                         confidence=float(face_obj.get("confidence", 0.0)),
                     )
                 )
